@@ -14,7 +14,7 @@ Needs Python 3.10+, `pip install openpyxl`, and the [Claude Code](https://docs.c
 python3 review.py --idea examples/idea.txt --evidence examples/evidence.csv --lang en --cap 1.5 --out review.xlsx
 ```
 
-`--cap` is a hard spending limit in USD for the run. One run of the example cost about 0.92 USD (a single measurement in October 2026; yours will differ). `--lang ko` writes Korean.
+`--cap` is a hard spending limit in USD for the run. One run of the example cost 0.92 USD and 1.13 USD in two measurements in October 2026 (yours will differ). `--lang ko` writes Korean.
 
 ## Your own input
 

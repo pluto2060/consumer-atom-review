@@ -19,6 +19,73 @@ sys.path.insert(0, str(ROOT))
 from agent_compiler.consumer_atom_dictionary import (  # noqa: E402
     ATOMS, BEHAVIOR_EFFECTS, COMPLETE_GRADE, EVIDENCE_LABEL, LAYERS, MANAGEMENT_FIELDS, MODERATORS, THEORY_STATUS, VALIDATION_TASKS)
 
+from agent_compiler import consumer_atom_dictionary as _dic  # noqa: E402
+from agent_compiler import consumer_atom_dictionary_en as _den  # noqa: E402
+
+
+def _dictionary_en() -> dict:
+    """Korean dictionary text -> English, built from the two parallel dictionary modules (same row order), so a fresh run needs no hand translation of names."""
+    m = {}
+    for lid, rows in _dic._RAW.items():
+        for (n, mean, ex), (en, em, eex) in zip(rows, _den.RAW_EN[lid]):
+            m[n], m[mean], m[ex] = en, em, eex
+    for lid, name in _dic.LAYERS.items():
+        m[name] = _den.LAYERS_EN[name]
+    for _k, (n, mean) in _dic.MODERATORS.items():
+        m[n], m[mean] = _den.MODERATORS_EN[n][0], _den.MODERATORS_EN[n][1]
+    return m
+
+
+DICT_EN = _dictionary_en()
+
+
+def _compose_en(text: str) -> str:
+    """'L2.06 정보 신뢰도, L6.07 결정 확신' style cells: translate the name after each atom/layer id."""
+    for aid in sorted(_dic.ATOMS, key=len, reverse=True):
+        text = text.replace(f"{aid} {_dic.ATOMS[aid]['name']}", f"{aid} {DICT_EN[_dic.ATOMS[aid]['name']]}")
+    for lid, name in _dic.LAYERS.items():
+        text = text.replace(f"{lid} {name}", f"{lid} {DICT_EN[name]}")
+    return text
+
+
+# Appendix-sheet headers and enum labels that are not part of the dictionary rows (same role as EN above).
+EXTRA_EN = {
+    "원자 ID": "Atom ID", "원자 이름": "Atom name", "정의": "Definition", "선행 조건": "Precondition", "작동 메커니즘": "Mechanism", "관측 지표": "Indicator",
+    "행동 결과": "Behavior effect", "관측 예시(사전)": "Observation example (dictionary)", "관련성": "Relevance", "이 아이디어에 대한 주장": "Claim about this idea",
+    "인용 증거": "Quoted evidence", "주요 위험": "Key risk", "예": "Yes", "(없음: 가정)": "(none: assumption)", "(없음)": "(none)",
+    "작동 방식(사전)": "How it works (dictionary)", "연결된 원자 수": "Linked atoms (count)", "연결된 원자": "Linked atoms",
+    "원인 레이어→결과 레이어": "Cause layer → effect layer", "경로가 지나는 레이어": "Layers on the path", "구매 후 행동(L7)까지 닿음": "Reaches post-purchase behavior (L7)",
+    "경로에서 빠진 작동 레이어": "Activated layers missing from the path", "인과관계 분리": "Separate the causal relationship",
+    "시간에 따른 변화 측정": "Measure change over time", "개인별 메커니즘 추정": "Estimate the mechanism per person",
+    "구매": "Purchase", "보류": "Hold", "이탈": "Churn",
+    "이론적 제안(여러 연구 전통을 연결한 통합 프레임워크, 개별 원자의 정의·측정·인과는 별도 검증 필요)":
+        "Theoretical proposal (an integrated framework linking several research traditions; each atom's definition, measurement and causality need separate validation)",
+}
+
+
+def _en_text(text: str) -> str:
+    """Exact maps, then composed atom ids, then comma lists and the few templated cells."""
+    hit = EN.get(text) or EXTRA_EN.get(text) or DICT_EN.get(text)
+    if hit:
+        return hit
+    m = re.fullmatch(r"(E\d)\(이 아이디어\) / 이론적 제안", text)
+    if m:
+        return f"{m.group(1)} (this idea) / theoretical proposal"
+    m = re.fullmatch(r"([\d.]+) / 5 \(작동 원자 (\d+)개\)", text)
+    if m:
+        return f"{m.group(1)} / 5 ({m.group(2)} activated atoms)"
+    m = re.fullmatch(r"run (\w+) 산출물에서 그대로 옮김\(재계산 없음\)", text)
+    if m:
+        return f"Copied as-is from the artifacts of run {m.group(1)} (not recomputed)"
+    composed = _compose_en(text)
+    if composed != text and not re.search("[가-힣]", composed):
+        return composed
+    if ", " in text:
+        parts = [_en_text(p) for p in text.split(", ")]
+        return ", ".join(parts)
+    return composed
+
+
 STATUS_KO = {"hypothesis_only": "가설 수준(E0만 있음)", "statements_only": "진술 수준(E1까지)", "has_behavior_evidence": "행동 근거 있음(E2 이상)"}
 REL_KO = {"activated": "작동", "inactive": "해당 없음", "unknown": "판단 불가"}
 DIR_KO = {"supports": "구매에 유리", "hinders": "구매에 불리", "mixed": "혼합"}
@@ -73,7 +140,9 @@ def build_workbook(run: dict):
     lang = verdict.get("language", "ko")
 
     def tr(text):
-        return EN.get(text, text) if lang == "en" else text
+        if lang != "en":
+            return text
+        return _en_text(text) if isinstance(text, str) else text
 
     def fill(color):
         return PatternFill("solid", fgColor=color)
@@ -258,6 +327,12 @@ def build_workbook(run: dict):
     s.append(["", "모델 성격", THEORY_STATUS, ""])
     s.append(["", "출처", f"run {run['run_id']} 산출물에서 그대로 옮김(재계산 없음)", ""])
     wrap(s)
+    if lang == "en":   # appendix sheets append raw dictionary text: translate every remaining cell through the same maps
+        for sheet in wb:
+            for row in sheet.iter_rows():
+                for cell in row:
+                    if isinstance(cell.value, str) and re.search("[가-힣]", cell.value):
+                        cell.value = tr(cell.value)
     return wb
 
 
