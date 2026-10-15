@@ -1,0 +1,297 @@
+{
+ "name": "consumer_atom_layer_review",
+ "version": "1.1",
+ "objective": "Review one product idea against the owner's consumer-psychology atom dictionary (8 layers L0-L7, 75 atomic factors, 7 moderators): mark which atoms the idea activates, record mechanism, indicator, behavior effect and moderators with the evidence behind each, critique every layer, chain the activated atoms into a causal path and name the validation tasks. The final deliverable is an Excel workbook built from the committed artifacts by scripts/consumer_atom_review_xlsx.py. The source model is an integrating framework, not a validated standard. v1.1 (owner's sample sheet, 2026-10-15): free text in the language of the request (ko or en, Korean when unstated; compiler-checked); each activated atom also carries a numeric score (1-5, capped by the evidence grade), a testable hypothesis and an improvement recommendation; the verdict adds the idea summary, value boxes, ratings, a judgment limited by the recorded evidence, an action plan and additional notes; the workbook follows the single-sheet layout of the sample.",
+ "max_attempts": 3,
+ "require_guard": false,
+ "use": "internal",
+ "forbidden_actions": [
+  "shell",
+  "write_file",
+  "modify_policy",
+  "skip_step",
+  "self_approve"
+ ],
+ "provenance": [
+  "user_provided"
+ ],
+ "rules": [
+  "Every atom of the dictionary is answered once and every claim cites evidence or is an assumption",
+  "Layer, name and meaning of an atom and its evidence grade are derived by the compiler, never written by the model",
+  "Confidence cannot exceed the ceiling of the evidence grade",
+  "Moderators are kept apart from atoms: they are listed per atom, never counted as atoms",
+  "The per-layer table and the evidence status are computed by the compiler; hypothesis_only never means the idea will fail or sell"
+ ],
+ "steps": [
+  {
+   "id": "INTAKE",
+   "validator": "consumer.intake2",
+   "requires": [],
+   "output": "intake.json",
+   "next": [
+    "ATOMS_L0_L3"
+   ],
+   "description": "Restate the idea as product, customer and situation using only words from the idea statement.",
+   "instruction": "The idea is in the intent between IDEA_JSON_BEGIN and IDEA_JSON_END and the evidence rows between EVIDENCE_JSON_BEGIN and EVIDENCE_JSON_END. Write `product`, `customer` and `situation`, each as {text, quote}: `text` is a short phrase and `quote` is copied word for word from the idea statement. Do not add facts the statement does not contain. Language: if the intent holds a LANGUAGE_JSON block {id: output, code}, write EVERY free-text field in that language (ko = Korean, en = English); without the block write Korean (한국어). The compiler checks the script of each text. Evidence quotes are the only exception: they stay word for word in the language of the evidence row (the INTAKE quotes in the language of the idea statement); do not translate them. Fixed values (relevance, direction, behavior_effect, moderators, final_judgment, ratings) keep their listed words.",
+   "contract": {
+    "product": {
+     "text": "short phrase",
+     "quote": "words copied from the idea statement"
+    },
+    "customer": {
+     "text": "short phrase",
+     "quote": "words copied from the idea statement"
+    },
+    "situation": {
+     "text": "short phrase",
+     "quote": "words copied from the idea statement"
+    }
+   }
+  },
+  {
+   "id": "ATOMS_L0_L3",
+   "validator": "consumer.atoms2_l0_l3",
+   "requires": [
+    "INTAKE"
+   ],
+   "output": "atoms_l0_l3.json",
+   "next": [
+    "ATOMS_L4_L5"
+   ],
+   "description": "Review the idea against the 29 atoms of layers L0, L1, L2, L3.",
+   "instruction": "The idea is in the intent between IDEA_JSON_BEGIN and IDEA_JSON_END and the evidence rows between EVIDENCE_JSON_BEGIN and EVIDENCE_JSON_END (each row has id, kind and text; kind is one of assumption, statement, behavior, payment, repeat_outcome). For EVERY atom listed below write exactly one record in `atoms`. relevance: activated = the idea touches or depends on this atom in the purchase path; inactive = it plays no role (say why in claim); unknown = the idea gives no way to tell (say what is missing). `evidence` is a list of {id, quote} with the quote copied word for word from that evidence row, or an empty list when the claim is only an assumption; the compiler derives the evidence grade from the row kind and caps `score` (1-5) by it (an activated record's `score`: E0 at most 2, E1 at most 3, E2 at most 4, E3 and above 5). Activated records also need: score (integer 1-5 = how strongly the idea handles this atom in a way the evidence supports; 1 very weak, 5 very strong), hypothesis (the testable statement to verify, 12+ characters), recommendation (the improvement you advise, 12+ characters), direction (supports | hinders | mixed = effect of the idea on purchase through this atom), precondition (when the atom is activated), mechanism (what it changes), indicator (how it could be measured), behavior_effect (a list from ['purchase', 'hold', 'churn']: purchase, hold, churn) and moderators (a list from {'M1': '개인차', 'M2': '문화·집단', 'M3': '제품 관여도', 'M4': '구매 맥락', 'M5': '시간 지평', 'M6': '자원 제약', 'M7': '기존 경험'}, empty when none applies). Inactive and unknown records carry only id, relevance, claim, evidence, critique. critique is your review of the risks and counter-arguments around this atom (a sentence of 20+ characters for activated records, 12+ otherwise). Use only the evidence rows; a claim without a cited row is an assumption. Language: if the intent holds a LANGUAGE_JSON block {id: output, code}, write EVERY free-text field in that language (ko = Korean, en = English); without the block write Korean (한국어). The compiler checks the script of each text. Evidence quotes are the only exception: they stay word for word in the language of the evidence row (the INTAKE quotes in the language of the idea statement); do not translate them. Fixed values (relevance, direction, behavior_effect, moderators, final_judgment, ratings) keep their listed words.\n\nAtoms of this step (29):\nL0 환경·상태:\n  L0.01 가처분 자원 = 실제로 쓸 수 있는 돈\n  L0.02 시간 제약 = 결정을 내릴 수 있는 시간\n  L0.03 신체 상태 = 피로, 배고픔, 수면 상태\n  L0.04 현재 상황 = 장소, 동행자, 사용 맥락\n  L0.05 선택 가능성 = 접근할 수 있는 상품과 서비스\n  L0.06 외부 압력 = 마감, 긴급성, 주변의 요구\nL1 감각·주의:\n  L1.01 시각적 현저성 = 얼마나 눈에 띄는가\n  L1.02 감각적 쾌감 = 색상·소리·촉감의 즐거움\n  L1.03 정보 가시성 = 핵심 정보가 쉽게 보이는가\n  L1.04 주의 지속 = 얼마나 오래 주목하는가\n  L1.05 주의 전환 비용 = 다른 대안으로 이동하기 어려운 정도\n  L1.06 목표 관련 주의 = 현재 관심사와 맞는 정보에 집중하는 정도\nL2 기억·해석:\n  L2.01 브랜드 회상 = 브랜드를 기억에서 떠올리는 정도\n  L2.02 경험 기억 = 과거 사용 경험의 기억\n  L2.03 연상 = 상품을 볼 때 함께 떠오르는 개념\n  L2.04 기대 형성 = 구매 후 결과에 대한 예상\n  L2.05 해석 프레임 = 동일한 정보를 어떤 관점으로 보는가\n  L2.06 정보 신뢰도 = 정보가 믿을 만하다고 느끼는 정도\n  L2.07 불확실성 = 결과를 얼마나 모르는가\nL3 욕구·동기:\n  L3.01 생존·안전 욕구 = 기본적인 안전과 안정 추구\n  L3.02 편의 욕구 = 노력과 시간을 줄이려는 욕구\n  L3.03 성취 욕구 = 목표를 달성하고 싶은 욕구\n  L3.04 자율성 욕구 = 스스로 결정하고 통제하려는 욕구\n  L3.05 숙련 욕구 = 능력을 키우려는 욕구\n  L3.06 소속 욕구 = 집단의 일부가 되고 싶은 욕구\n  L3.07 지위 욕구 = 인정과 위상을 얻으려는 욕구\n  L3.08 회피 동기 = 실패·손실·불편을 피하려는 동기\n  L3.09 탐색 욕구 = 새로운 경험과 지식을 얻으려는 욕구\n  L3.10 습관적 동기 = 익숙한 행동을 반복하려는 경향",
+   "contract": {
+    "atoms": [
+     {
+      "id": "L0.01",
+      "relevance": "activated",
+      "claim": "one sentence stating how the idea touches this atom",
+      "evidence": [
+       {
+        "id": "evidence id from EVIDENCE",
+        "quote": "words copied from that evidence text"
+       }
+      ],
+      "critique": "sentence reviewing how the idea handles the atom",
+      "direction": "supports|hinders|mixed",
+      "precondition": "when it is activated, 12+ characters",
+      "mechanism": "what it changes, 12+ characters",
+      "indicator": "how to measure it, 12+ characters",
+      "behavior_effect": [
+       "purchase"
+      ],
+      "moderators": [
+       "M1"
+      ],
+      "score": 3,
+      "hypothesis": "testable statement, 12+ characters",
+      "recommendation": "improvement advice, 12+ characters"
+     },
+     {
+      "id": "L0.02",
+      "relevance": "inactive",
+      "claim": "why the idea does not involve this atom",
+      "evidence": [],
+      "critique": "short review sentence"
+     }
+    ]
+   }
+  },
+  {
+   "id": "ATOMS_L4_L5",
+   "validator": "consumer.atoms2_l4_l5",
+   "requires": [
+    "INTAKE",
+    "ATOMS_L0_L3"
+   ],
+   "output": "atoms_l4_l5.json",
+   "next": [
+    "ATOMS_L6_L7"
+   ],
+   "description": "Review the idea against the 22 atoms of layers L4, L5.",
+   "instruction": "The idea is in the intent between IDEA_JSON_BEGIN and IDEA_JSON_END and the evidence rows between EVIDENCE_JSON_BEGIN and EVIDENCE_JSON_END (each row has id, kind and text; kind is one of assumption, statement, behavior, payment, repeat_outcome). For EVERY atom listed below write exactly one record in `atoms`. relevance: activated = the idea touches or depends on this atom in the purchase path; inactive = it plays no role (say why in claim); unknown = the idea gives no way to tell (say what is missing). `evidence` is a list of {id, quote} with the quote copied word for word from that evidence row, or an empty list when the claim is only an assumption; the compiler derives the evidence grade from the row kind and caps `score` (1-5) by it (an activated record's `score`: E0 at most 2, E1 at most 3, E2 at most 4, E3 and above 5). Activated records also need: score (integer 1-5 = how strongly the idea handles this atom in a way the evidence supports; 1 very weak, 5 very strong), hypothesis (the testable statement to verify, 12+ characters), recommendation (the improvement you advise, 12+ characters), direction (supports | hinders | mixed = effect of the idea on purchase through this atom), precondition (when the atom is activated), mechanism (what it changes), indicator (how it could be measured), behavior_effect (a list from ['purchase', 'hold', 'churn']: purchase, hold, churn) and moderators (a list from {'M1': '개인차', 'M2': '문화·집단', 'M3': '제품 관여도', 'M4': '구매 맥락', 'M5': '시간 지평', 'M6': '자원 제약', 'M7': '기존 경험'}, empty when none applies). Inactive and unknown records carry only id, relevance, claim, evidence, critique. critique is your review of the risks and counter-arguments around this atom (a sentence of 20+ characters for activated records, 12+ otherwise). Use only the evidence rows; a claim without a cited row is an assumption. Language: if the intent holds a LANGUAGE_JSON block {id: output, code}, write EVERY free-text field in that language (ko = Korean, en = English); without the block write Korean (한국어). The compiler checks the script of each text. Evidence quotes are the only exception: they stay word for word in the language of the evidence row (the INTAKE quotes in the language of the idea statement); do not translate them. Fixed values (relevance, direction, behavior_effect, moderators, final_judgment, ratings) keep their listed words.\n\nAtoms of this step (22):\nL4 정서·가치:\n  L4.01 기대 즐거움 = 사용 전 예상되는 즐거움\n  L4.02 즉각적 쾌감 = 지금 얻는 즐거움\n  L4.03 안도감 = 불안이나 부담이 줄어드는 느낌\n  L4.04 자부심 = 자신에 대한 긍정적 감정\n  L4.05 불안 = 실패 가능성에 대한 불편함\n  L4.06 후회 예상 = 선택을 잘못할까 하는 예상\n  L4.07 주관적 효용 = 자신에게 얼마나 유용한가\n  L4.08 가격 고통 = 돈을 지출할 때 느끼는 심리적 부담\n  L4.09 손실 민감성 = 잃는 것에 얼마나 민감한가\n  L4.10 위험 인식 = 품질·금전·평판 등의 위험 평가\nL5 자아·사회:\n  L5.01 현재 자아 일치 = 제품이 지금의 나와 맞는 정도\n  L5.02 이상적 자아 일치 = 되고 싶은 나와 맞는 정도\n  L5.03 사회적 자아 일치 = 타인에게 보이고 싶은 모습과의 일치\n  L5.04 정체성 확인 = 기존의 자기 인식을 확인하는 효과\n  L5.05 정체성 형성 = 새로운 자기 인식을 만들려는 동기\n  L5.06 정체성 표현 = 자신의 특성을 외부에 드러내는 기능\n  L5.07 자기 효능감 = 내가 실제로 해낼 수 있다는 믿음\n  L5.08 자아 불일치 = 현실의 나와 원하는 나 사이의 간극\n  L5.09 소속감 = 집단과 연결되어 있다고 느끼는 정도\n  L5.10 차별화 욕구 = 다른 사람과 구별되고 싶은 정도\n  L5.11 지위 신호 = 능력·성공·위상을 전달하는 기능\n  L5.12 규범 적합성 = 집단의 기대와 일치하는 정도",
+   "contract": {
+    "atoms": [
+     {
+      "id": "L0.01",
+      "relevance": "activated",
+      "claim": "one sentence stating how the idea touches this atom",
+      "evidence": [
+       {
+        "id": "evidence id from EVIDENCE",
+        "quote": "words copied from that evidence text"
+       }
+      ],
+      "critique": "sentence reviewing how the idea handles the atom",
+      "direction": "supports|hinders|mixed",
+      "precondition": "when it is activated, 12+ characters",
+      "mechanism": "what it changes, 12+ characters",
+      "indicator": "how to measure it, 12+ characters",
+      "behavior_effect": [
+       "purchase"
+      ],
+      "moderators": [
+       "M1"
+      ],
+      "score": 3,
+      "hypothesis": "testable statement, 12+ characters",
+      "recommendation": "improvement advice, 12+ characters"
+     },
+     {
+      "id": "L0.02",
+      "relevance": "inactive",
+      "claim": "why the idea does not involve this atom",
+      "evidence": [],
+      "critique": "short review sentence"
+     }
+    ]
+   }
+  },
+  {
+   "id": "ATOMS_L6_L7",
+   "validator": "consumer.atoms2_l6_l7",
+   "requires": [
+    "INTAKE",
+    "ATOMS_L4_L5"
+   ],
+   "output": "atoms_l6_l7.json",
+   "next": [
+    "LAYERS"
+   ],
+   "description": "Review the idea against the 24 atoms of layers L6, L7.",
+   "instruction": "The idea is in the intent between IDEA_JSON_BEGIN and IDEA_JSON_END and the evidence rows between EVIDENCE_JSON_BEGIN and EVIDENCE_JSON_END (each row has id, kind and text; kind is one of assumption, statement, behavior, payment, repeat_outcome). For EVERY atom listed below write exactly one record in `atoms`. relevance: activated = the idea touches or depends on this atom in the purchase path; inactive = it plays no role (say why in claim); unknown = the idea gives no way to tell (say what is missing). `evidence` is a list of {id, quote} with the quote copied word for word from that evidence row, or an empty list when the claim is only an assumption; the compiler derives the evidence grade from the row kind and caps `score` (1-5) by it (an activated record's `score`: E0 at most 2, E1 at most 3, E2 at most 4, E3 and above 5). Activated records also need: score (integer 1-5 = how strongly the idea handles this atom in a way the evidence supports; 1 very weak, 5 very strong), hypothesis (the testable statement to verify, 12+ characters), recommendation (the improvement you advise, 12+ characters), direction (supports | hinders | mixed = effect of the idea on purchase through this atom), precondition (when the atom is activated), mechanism (what it changes), indicator (how it could be measured), behavior_effect (a list from ['purchase', 'hold', 'churn']: purchase, hold, churn) and moderators (a list from {'M1': '개인차', 'M2': '문화·집단', 'M3': '제품 관여도', 'M4': '구매 맥락', 'M5': '시간 지평', 'M6': '자원 제약', 'M7': '기존 경험'}, empty when none applies). Inactive and unknown records carry only id, relevance, claim, evidence, critique. critique is your review of the risks and counter-arguments around this atom (a sentence of 20+ characters for activated records, 12+ otherwise). Use only the evidence rows; a claim without a cited row is an assumption. Language: if the intent holds a LANGUAGE_JSON block {id: output, code}, write EVERY free-text field in that language (ko = Korean, en = English); without the block write Korean (한국어). The compiler checks the script of each text. Evidence quotes are the only exception: they stay word for word in the language of the evidence row (the INTAKE quotes in the language of the idea statement); do not translate them. Fixed values (relevance, direction, behavior_effect, moderators, final_judgment, ratings) keep their listed words.\n\nAtoms of this step (24):\nL6 비교·결정:\n  L6.01 기준점 = 무엇을 기준으로 비싸거나 싸다고 느끼는가\n  L6.02 상대적 가치 = 다른 선택지보다 얼마나 유리한가\n  L6.03 기회비용 = 이것을 선택해 포기하는 다른 가치\n  L6.04 전환 비용 = 기존 제품에서 이동하는 부담\n  L6.05 손실 회피 = 같은 크기의 이익보다 손실을 더 민감하게 평가하는 경향\n  L6.06 확률 판단 = 성공·실패 가능성을 어떻게 추정하는가\n  L6.07 결정 확신 = 선택이 옳다고 느끼는 정도\n  L6.08 선택 과부하 = 대안이 많아져 선택이 어려워지는 현상\n  L6.09 기본값 효과 = 미리 선택된 옵션이 판단에 미치는 영향\n  L6.10 마찰 비용 = 구매 과정에서 드는 추가 노력\n  L6.11 즉시성 선호 = 미래의 이익보다 즉각적인 결과를 선호하는 경향\n  L6.12 후회 최소화 = 나중에 선택을 후회하지 않으려는 경향\nL7 행동·학습:\n  L7.01 구매 실행 = 실제로 결제하는 행동\n  L7.02 사용 시작 = 제품을 처음 사용하는 행동\n  L7.03 사용 빈도 = 얼마나 자주 사용하는가\n  L7.04 목표 달성 = 원하는 결과를 실제로 얻었는가\n  L7.05 기대-결과 차이 = 예상과 실제 결과의 차이\n  L7.06 만족 = 사용 경험에 대한 평가\n  L7.07 학습 = 경험을 통해 판단 기준이 변하는 과정\n  L7.08 습관 형성 = 반복 사용이 자동화되는 정도\n  L7.09 신뢰 갱신 = 경험 이후 믿음이 강해지거나 약해지는 것\n  L7.10 자아 갱신 = 경험이 자기 인식을 바꾸는 정도\n  L7.11 추천 행동 = 다른 사람에게 권하는 행동\n  L7.12 이탈 = 사용을 중단하는 행동",
+   "contract": {
+    "atoms": [
+     {
+      "id": "L0.01",
+      "relevance": "activated",
+      "claim": "one sentence stating how the idea touches this atom",
+      "evidence": [
+       {
+        "id": "evidence id from EVIDENCE",
+        "quote": "words copied from that evidence text"
+       }
+      ],
+      "critique": "sentence reviewing how the idea handles the atom",
+      "direction": "supports|hinders|mixed",
+      "precondition": "when it is activated, 12+ characters",
+      "mechanism": "what it changes, 12+ characters",
+      "indicator": "how to measure it, 12+ characters",
+      "behavior_effect": [
+       "purchase"
+      ],
+      "moderators": [
+       "M1"
+      ],
+      "score": 3,
+      "hypothesis": "testable statement, 12+ characters",
+      "recommendation": "improvement advice, 12+ characters"
+     },
+     {
+      "id": "L0.02",
+      "relevance": "inactive",
+      "claim": "why the idea does not involve this atom",
+      "evidence": [],
+      "critique": "short review sentence"
+     }
+    ]
+   }
+  },
+  {
+   "id": "LAYERS",
+   "validator": "consumer.layers2",
+   "requires": [
+    "ATOMS_L0_L3",
+    "ATOMS_L4_L5",
+    "ATOMS_L6_L7"
+   ],
+   "output": "layers.json",
+   "next": [
+    "VERDICT"
+   ],
+   "description": "Critique each of the 8 layers and chain the activated atoms into a causal path to behavior.",
+   "instruction": "Write `layers`: one record per layer L0..L7, each exactly {layer, critique, weakest_atom}. critique (40+ characters) reviews how the idea handles that layer as a whole; weakest_atom is the id of the activated atom of that layer the idea handles worst, or exactly none when no atom of the layer is activated. Write `chain`: at least 3 edges {from, to, why} between ATOMS you activated, showing the causal path through which the idea could lead to purchase (why is 20+ characters). The source text says the order is not fixed: an edge may run backwards (for example from learning after use to memory or self) when that is what happens. Language: if the intent holds a LANGUAGE_JSON block {id: output, code}, write EVERY free-text field in that language (ko = Korean, en = English); without the block write Korean (한국어). The compiler checks the script of each text. Evidence quotes are the only exception: they stay word for word in the language of the evidence row (the INTAKE quotes in the language of the idea statement); do not translate them. Fixed values (relevance, direction, behavior_effect, moderators, final_judgment, ratings) keep their listed words.",
+   "contract": {
+    "layers": [
+     {
+      "layer": "L0",
+      "critique": "40+ characters",
+      "weakest_atom": "L0.01 or none"
+     }
+    ],
+    "chain": [
+     {
+      "from": "L1.01",
+      "to": "L4.01",
+      "why": "20+ characters"
+     }
+    ]
+   }
+  },
+  {
+   "id": "VERDICT",
+   "validator": "consumer.verdict2",
+   "requires": [
+    "ATOMS_L0_L3",
+    "ATOMS_L4_L5",
+    "ATOMS_L6_L7",
+    "LAYERS"
+   ],
+   "output": "verdict.json",
+   "next": [],
+   "description": "Closing critique: strengths, risks and the three validation tasks. The compiler writes the per-layer table and the evidence status.",
+   "instruction": "Write `overall` (60+ characters, your critique of the whole idea), `strongest` (at most 5 activated atoms whose direction is supports), `top_risks` (records {atom_id, why}: include EVERY activated atom whose direction is hinders, plus others that worry you most, at most 8 unless more atoms hinder) and `validation_plan`: exactly one record for each task of ['causal_separation', 'time_measurement', 'individual_mechanism'] (causal_separation = separate cause from selection, time_measurement = measure before, during and after use, individual_mechanism = estimate which path works for which consumer), each {task, atom_ids, design} with at least one activated atom and a design sentence of 30+ characters. The compiler adds layer_table and evidence_status; never write them yourself. Language: if the intent holds a LANGUAGE_JSON block {id: output, code}, write EVERY free-text field in that language (ko = Korean, en = English); without the block write Korean (한국어). The compiler checks the script of each text. Evidence quotes are the only exception: they stay word for word in the language of the evidence row (the INTAKE quotes in the language of the idea statement); do not translate them. Fixed values (relevance, direction, behavior_effect, moderators, final_judgment, ratings) keep their listed words. Also write: idea_name (short name), problem (20+ characters), core_hypothesis (the core consumer-psychology hypothesis, 20+), functional_value, emotional_value, self_value (12+ each: what the idea gives on the functional, emotional and identity side), biggest_uncertainty (12+), priority_experiment (20+), ratings {potential, feasibility, appeal} each one of 높음 | 보통 | 낮음, final_judgment (one of 진행 | 조건부 진행 | 보류 | 중단; the compiler limits it: 진행 needs at least half of the activated atoms at grade E3 or above, 중단 needs at least two hindering atoms backed by grade E2 or above), judgment_reason (30+), action_plan (3-6 items {priority 1..n in order, action, detail 20+, owner (a team or role), duration, atom_ids (activated atoms)}) and additional_notes (2-6 sentences). The compiler adds mean scores per layer, overall_mean_score, completed_share and allowed_judgments; never write them yourself.",
+   "contract": {
+    "overall": "60+ characters",
+    "strongest": [
+     "L4.01"
+    ],
+    "top_risks": [
+     {
+      "atom_id": "L4.08",
+      "why": "20+ characters"
+     }
+    ],
+    "validation_plan": [
+     {
+      "task": "causal_separation",
+      "atom_ids": [
+       "L5.02"
+      ],
+      "design": "30+ characters"
+     }
+    ],
+    "idea_name": "short name",
+    "problem": "20+ characters",
+    "core_hypothesis": "20+ characters",
+    "functional_value": "12+ characters",
+    "emotional_value": "12+ characters",
+    "self_value": "12+ characters",
+    "biggest_uncertainty": "12+ characters",
+    "priority_experiment": "20+ characters",
+    "ratings": {
+     "potential": "높음|보통|낮음",
+     "feasibility": "높음|보통|낮음",
+     "appeal": "높음|보통|낮음"
+    },
+    "final_judgment": "진행|조건부 진행|보류|중단",
+    "judgment_reason": "30+ characters",
+    "action_plan": [
+     {
+      "priority": 1,
+      "action": "6+ characters",
+      "detail": "20+ characters",
+      "owner": "team or role",
+      "duration": "e.g. 2주",
+      "atom_ids": [
+       "L6.05"
+      ]
+     }
+    ],
+    "additional_notes": [
+     "12+ characters"
+    ]
+   }
+  }
+ ]
+}
